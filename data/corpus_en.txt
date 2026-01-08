@@ -1,0 +1,20 @@
+Artificial intelligence or AI is the capability of computational systems to perform tasks associated with human intelligence.
+AI includes tasks such as learning, reasoning, problem-solving, perception, and decision-making.
+AI is a field of computer science that develops methods enabling machines to perceive their environment.
+High-profile applications of AI include advanced web search engines like Google Search.
+Recommendation systems used by YouTube, Amazon, and Netflix are examples of AI.
+Virtual assistants like Siri and Alexa are common AI applications.
+Generative tools like ChatGPT and AI art are part of the modern AI boom.
+Artificial intelligence was founded as an academic discipline in 1956.
+The field of AI went through cycles of optimism and disappointment known as AI winters.
+Funding for AI increased after 2012 when GPUs started accelerating neural networks.
+Deep learning outperformed previous AI techniques leading to rapid progress.
+Natural language processing or NLP has its roots in the 1950s.
+Alan Turing published Computing Machinery and Intelligence in 1950 proposing the Turing test.
+The Turing test is a criterion of intelligence involving the interpretation of natural language.
+The Georgetown experiment in 1954 involved automatic translation of Russian sentences into English.
+ELIZA was a simulation of a Rogerian psychotherapist developed in the 1960s.
+Symbolic NLP was the dominant paradigm from the 1950s until the early 1990s.
+Statistical NLP emerged in the 1990s with the introduction of machine learning algorithms.
+Google BERT and OpenAI GPT-3 are examples of large language models.
+Ethical concerns have been raised about AI long-term effects and potential risks.
