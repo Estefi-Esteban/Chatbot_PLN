@@ -23,6 +23,17 @@ NEGATIVE_FR = {
     "horrible", "déprimé", "déprimée", "problème"
 }
 
+POSITIVE_IT = {
+    "felice", "bene", "buono", "buona", "ottimo", "fantastico",
+    "grazie", "amore", "contento", "contenta", "migliore"
+}
+
+NEGATIVE_IT = {
+    "triste", "male", "cattivo", "cattiva", "pessimo",
+    "odio", "arrabbiato", "arrabbiata", "problema",
+    "brutto", "brutta", "deprimente"
+}
+
 def analyze_sentiment(text: str) -> dict:
     blob = TextBlob(text)
     polarity = blob.sentiment.polarity
@@ -31,15 +42,19 @@ def analyze_sentiment(text: str) -> dict:
     manual_score = 0
 
     for word in words:
-        clean = word.strip(".,!¡?¿'")
+        clean_word = word.strip(".,!¡?¿'")
 
-        if clean in POSITIVE_ES:
+        if clean_word in POSITIVE_ES:
             manual_score += 0.6
-        elif clean in NEGATIVE_ES:
+        elif clean_word in NEGATIVE_ES:
             manual_score -= 0.6
-        elif clean in POSITIVE_FR:
+        elif clean_word in POSITIVE_FR:
             manual_score += 0.6
-        elif clean in NEGATIVE_FR:
+        elif clean_word in NEGATIVE_FR:
+            manual_score -= 0.6
+        elif clean_word in POSITIVE_IT:
+            manual_score += 0.6
+        elif clean_word in NEGATIVE_IT:
             manual_score -= 0.6
 
     if manual_score != 0:

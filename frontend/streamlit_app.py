@@ -1,10 +1,8 @@
 import streamlit as st
 import requests
 import uuid
-import logging
 
-logging.basicConfig(level=logging.INFO)
-
+# ---------------- CONFIG ----------------
 API_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(
@@ -13,93 +11,132 @@ st.set_page_config(
     layout="centered"
 )
 
+# ---------------- ESTILOS ----------------
 st.markdown("""
 <style>
-.chat-title {
-    text-align: center;
-    font-size: 2.5em;
-    font-weight: bold;
+.chat-wrapper {
+    max-width: 900px;
+    margin: auto;
 }
-.chat-subtitle {
+
+.user-msg {
+    background: rgba(0, 123, 255, 0.15);
+    color: inherit;
+    padding: 14px 18px;
+    border-radius: 18px;
+    margin: 10px 0;
+    text-align: right;
+}
+
+.bot-msg {
+    background: rgba(120, 120, 120, 0.15);
+    color: inherit;
+    padding: 14px 18px;
+    border-radius: 18px;
+    margin: 10px 0;
+    text-align: left;
+}
+
+.meta {
+    font-size: 0.75em;
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+.footer {
     text-align: center;
-    color: #6c757d;
+    font-size: 0.8em;
+    opacity: 0.6;
+    margin-top: 40px;
 }
 </style>
-
-<div class="chat-title">🤖 Chatbot PLN Multilenguaje</div>
-<div class="chat-subtitle">
-Procesamiento del Lenguaje Natural · Contexto · Sentimiento
-</div>
-<hr>
 """, unsafe_allow_html=True)
 
-with st.sidebar:
-    st.header("ℹ️ Información")
-    st.markdown("""
-    **Tecnologías**
-    - FastAPI
-    - Streamlit
-    - TF-IDF
-    - SQLite
-    
-    **Características**
-    - Multilenguaje
-    - Contexto conversacional
-    - Análisis de sentimiento
-    """)
+# ---------------- SIDEBAR ----------------
+st.sidebar.title("🤖 Chatbot PLN")
 
-# Crear sesión única
+st.sidebar.markdown("""
+**Chatbot basado en PLN clásico**
+
+✔ Multilenguaje  
+✔ Contexto conversacional  
+✔ Análisis de sentimiento  
+✔ Persistencia en BD  
+✔ FastAPI + Streamlit
+""")
+
+# 🔹 Botón nueva conversación
+if st.sidebar.button("🆕 Nueva conversación"):
+    st.session_state.messages = []
+    st.session_state.session_id = str(uuid.uuid4())
+    st.experimental_rerun()
+
+st.sidebar.markdown("---")
+st.sidebar.caption("Desarrollado por Estefanía 💙")
+
+# ---------------- SESIÓN ----------------
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mostrar historial
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+# ---------------- HEADER ----------------
+st.title("🤖 Chatbot PLN Multilenguaje")
+st.markdown(
+    "Chatbot académico basado en **TF-IDF**, "
+    "**contexto conversacional** y **análisis de sentimiento**."
+)
 
-# Input del usuario
+st.markdown("---")
+
+# ---------------- CHAT ----------------
+with st.container():
+    for msg in st.session_state.messages:
+        if msg["role"] == "user":
+            st.markdown(
+                f"<div class='user-msg'>{msg['content']}</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"<div class='bot-msg'>{msg['content']}</div>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<div class='meta'>🌍 {msg['language']} · 💭 {msg['sentiment']}</div>",
+                unsafe_allow_html=True
+            )
+
+# ---------------- INPUT ----------------
 user_input = st.chat_input("Escribe tu mensaje...")
 
 if user_input:
-    # Mostrar mensaje usuario
     st.session_state.messages.append({
         "role": "user",
         "content": user_input
     })
-    with st.chat_message("user"):
-        st.markdown(user_input)
 
-    # Llamada a FastAPI
-    response = requests.post(
-        f"{API_URL}/chat",
-        json={
-            "message": user_input,
-            "session_id": st.session_state.session_id
-        }
-    ).json()
+    with st.spinner("Pensando... 🤔"):
+        response = requests.post(
+            f"{API_URL}/chat",
+            json={
+                "message": user_input,
+                "session_id": st.session_state.session_id
+            }
+        ).json()
 
-    bot_text = response["response"]
-    language = response["language"]
-    sentiment = response["sentiment"]["sentiment"]
-
-    logging.info(f"User: {user_input}")
-    logging.info(f"Bot: {bot_text}")
-
-
-    # Mostrar respuesta bot
     st.session_state.messages.append({
         "role": "assistant",
-        "content": bot_text
+        "content": response["response"],
+        "language": response["language"],
+        "sentiment": response["sentiment"]["sentiment"]
     })
-    with st.chat_message("assistant"):
-        st.markdown(bot_text)
-        st.caption(f"🌍 Idioma: {language} | 💭 Sentimiento: {sentiment}")
 
-if st.sidebar.button("🔄 Nueva conversación"):
-    st.session_state.messages = []
-    st.session_state.session_id = str(uuid.uuid4())
     st.experimental_rerun()
 
+# ---------------- FOOTER ----------------
+st.markdown(
+    "<div class='footer'>Proyecto PLN · Arquitectura clásica · 2024/2025</div>",
+    unsafe_allow_html=True
+)

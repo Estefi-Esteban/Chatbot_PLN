@@ -1,75 +1,113 @@
 # 🤖 Chatbot PLN Multilenguaje
 
-Chatbot basado en **Procesamiento del Lenguaje Natural (PLN clásico)** que incorpora contexto conversacional, análisis de sentimiento, persistencia de memoria y soporte multilenguaje. El sistema utiliza técnicas tradicionales como **TF-IDF** y **cosine similarity**, integrando un backend con **FastAPI** y un frontend interactivo con **Streamlit**.
+Chatbot académico-profesional basado en **Procesamiento del Lenguaje Natural (PLN clásico)**, capaz de mantener **conversaciones multilingües**, analizar **sentimiento**, gestionar **contexto conversacional** y persistir interacciones.
+
+Este proyecto ha sido diseñado con una **arquitectura extensible**, orientada a facilitar la incorporación de nuevos idiomas y funcionalidades avanzadas.
 
 ---
 
 ## ✨ Características principales
 
-* PLN clásico (TF-IDF + similitud coseno)
-* Contexto conversacional con persistencia (SQLite)
-* Análisis de sentimiento (TextBlob + corrección manual en español)
-* Soporte multilenguaje (ES, EN, FR, IT)
-* Respuestas empáticas según sentimiento
-* Frontend tipo chat (Streamlit)
-* API REST con FastAPI
-* Arquitectura modular y extensible
+* 🌍 **Soporte multilingüe nativo** (ES, EN, FR, IT)
+* 🧠 **PLN clásico** con TF-IDF + Similaridad del coseno
+* 💬 **Gestión de contexto conversacional** (historial por sesión)
+* 😊 **Análisis de sentimiento multilingüe** (con heurísticas léxicas)
+* ❤️ **Respuestas empáticas automáticas** según emoción detectada
+* 💾 **Persistencia en base de datos** (historial de conversaciones)
+* 🪵 **Sistema de logging profesional**
+* 🎨 **Interfaz web interactiva** con Streamlit
+* ⚙️ **API REST** con FastAPI
 
 ---
 
 ## 🏗️ Arquitectura del proyecto
 
 ```
-Chatbot_PLN/
-│
-├── app/
-│   ├── api/            # Rutas FastAPI
-│   ├── chatbot/        # Núcleo PLN
-│   ├── db/             # Base de datos SQLite
-│   └── main.py         # Entrada FastAPI
-│
-├── data/               # Corpus multilenguaje
-├── streamlit.py        # Interfaz gráfica
-├── requirements.txt
-└── README.md
+app/
+├── api/            # Endpoints FastAPI
+├── core/           # Lógica principal del chatbot (PLN)
+│   ├── core.py
+│   ├── preprocessing.py
+│   ├── sentiment.py
+│   └── language.py
+├── db/             # Base de datos y CRUD
+├── utils/          # Logger y utilidades
+├── data/           # Corpus por idioma
+├── streamlit.py    # Interfaz web
+└── main.py         # Arranque FastAPI
 ```
 
 ---
 
-## 🚀 Cómo ejecutar el proyecto
+## 🧠 Funcionamiento del Chatbot
 
-### 1️⃣ Crear entorno virtual
+1. **Detección automática del idioma** del mensaje del usuario.
+2. **Normalización del texto** (tokenización, stopwords, stemming/lemmatización).
+3. **Análisis de sentimiento** (TextBlob + diccionarios manuales por idioma).
+4. **Recuperación del contexto conversacional** desde base de datos.
+5. **Cálculo de similitud semántica** usando TF-IDF + cosine similarity.
+6. **Selección de la mejor respuesta** desde el corpus.
+7. **Fallback empático** si no se encuentra respuesta semántica válida.
+8. **Persistencia y logging** de la interacción.
+
+---
+
+## 🌍 Idiomas soportados
+
+| Idioma   | Código | Corpus | Sentimiento |
+| -------- | ------ | ------ | ----------- |
+| Español  | es     | ✅      | ✅           |
+| Inglés   | en     | ✅      | ✅           |
+| Francés  | fr     | ✅      | ✅           |
+| Italiano | it     | ✅      | ✅           |
+
+➡️ Añadir un nuevo idioma solo requiere:
+
+* Un corpus (`data/corpus_xx.txt`)
+* Stopwords y stemmer compatibles
+* Diccionario emocional opcional
+
+---
+
+## 🚀 Instalación y ejecución
+
+### 1️⃣ Clonar el repositorio
+
+```bash
+git clone https://github.com/tuusuario/chatbot-pln-multilenguaje.git
+cd chatbot-pln-multilenguaje
+```
+
+### 2️⃣ Crear entorno virtual
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
 ```
 
-### 2️⃣ Instalar dependencias
+### 3️⃣ Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3️⃣ Ejecutar backend (FastAPI)
+### 4️⃣ Descargar recursos NLTK
+
+```python
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+```
+
+### 5️⃣ Ejecutar API (FastAPI)
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Backend disponible en:
-
-```
-http://127.0.0.1:8000
-```
-
-Swagger UI:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-### 4️⃣ Ejecutar frontend (Streamlit)
+### 6️⃣ Ejecutar interfaz web (Streamlit)
 
 ```bash
 streamlit run streamlit.py
@@ -77,42 +115,70 @@ streamlit run streamlit.py
 
 ---
 
-## 🧠 Tecnologías utilizadas
+## 🪵 Sistema de Logging
 
-* Python 3.12
-* FastAPI
-* Streamlit
-* Scikit-learn
-* NLTK
-* TextBlob
-* SQLite
+El proyecto incorpora **logging estructurado** para:
 
----
+* Inicialización del chatbot
+* Detección de idioma
+* Análisis de sentimiento
+* Selección de respuesta
+* Errores y fallbacks
+* Persistencia en base de datos
 
-## 📊 Ejemplo de uso
+Esto facilita:
 
-* Preguntas informativas sobre PLN o IA
-* Conversaciones encadenadas usando contexto
-* Detección automática de idioma
-* Respuestas adaptadas al sentimiento del usuario
+* Debugging
+* Auditoría
+* Escalabilidad
 
 ---
 
-## ⚠️ Limitaciones
+## 🎯 Casos de uso
 
-* No utiliza modelos generativos (LLMs)
-* Dependencia de similitud léxica (TF-IDF)
-* No comprensión semántica profunda
-
-Estas limitaciones son propias del enfoque clásico y se abordan en la memoria del proyecto.
+* Chatbots educativos
+* Sistemas de atención al cliente
+* Prácticas académicas de PLN
+* Análisis conversacional
+* Prototipos de IA conversacional
 
 ---
 
-## 👩‍🎓 Autora
+## 📌 Tecnologías utilizadas
 
-**Estefanía**
+* **Python 3.10+**
+* **FastAPI**
+* **Streamlit**
+* **NLTK**
+* **Scikit-learn**
+* **TextBlob**
+* **SQLAlchemy**
+
+---
+
+## 📈 Posibles mejoras futuras
+
+* Ranking de respuestas por confianza
+* Integración con modelos transformer
+* Soporte de voz (STT / TTS)
+* Panel de analítica de conversaciones
+* Dockerización
+
+---
+
+## 👩‍🎓 Contexto académico
+
+Proyecto desarrollado como práctica avanzada de **Procesamiento del Lenguaje Natural**, enfocado en comprender y aplicar técnicas clásicas de PLN de forma estructurada y extensible.
+
+---
+
+## 👤 Autora
+
+**Estefania**
 Estudiante de Inteligencia Artificial
 
+📫 *Contacto y redes disponibles en GitHub / LinkedIn*
+
 ---
 
-✨ Proyecto académico desarrollado con fines educativos.
+⭐ Si te gusta este proyecto, ¡no olvides dejar una estrella en GitHub!
