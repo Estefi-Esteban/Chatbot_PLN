@@ -7,13 +7,14 @@ from app.db.crud import get_history
 router = APIRouter()
 
 # Inicializar chatbot (singleton simple)
-bot = PLNChatbot(
-    corpus_paths={
-        "es": "data/corpus_es.txt",
-        "en": "data/corpus_en.txt",
-        "fr": "data/corpus_fr.txt"
-    }
-)
+corpus_paths = {
+    "es": "data/corpora/processed/corpus_es.txt",
+    "en": "data/corpora/processed/corpus_en.txt",
+    "fr": "data/corpora/processed/corpus_fr.txt",
+    "it": "data/corpora/processed/corpus_it.txt"
+}
+
+bot = PLNChatbot(corpus_paths)
 
 
 @router.post("/chat", response_model=ChatResponse)

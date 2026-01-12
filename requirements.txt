@@ -18,3 +18,7 @@ streamlit==1.29.0
 
 # Base de datos
 sqlalchemy==2.0.23
+
+# Scrapper
+bs4
+wikipedia-api

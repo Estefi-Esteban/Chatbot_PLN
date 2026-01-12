@@ -21,8 +21,9 @@ class PLNChatbot:
 
         self.corpora = {}
         self.vectorizers = {}
+        self.session_language = {}
 
-        # 🔹 Inyecciones de conocimiento (controladas)
+        # 🔹 Inyecciones de conocimiento
         self.knowledge_injections = {
             "es": [
                 "El PLN se utiliza para traducción automática, chatbots, análisis de sentimientos y asistentes virtuales.",
@@ -35,15 +36,14 @@ class PLNChatbot:
                 "NLP or Natural Language Processing is a field of AI focused on the interaction between computers and human language."
             ],
             "fr": [
-                "Le TALN est utilisé pour la traduction automatique, les chatbots, l'analyse des sentiments et les assistants virtuels.",
-                "Le traitement automatique du langage naturel est un domaine de l'intelligence artificielle."
+                "Le TALN est utilisé pour la traduction automatique, les chatbots, l'analyse des sentiments et les assistants virtuels."
             ],
             "it": [
-                "L'NLP viene utilizzato per la traduzione automatica, i chatbot, l'analisi del sentiment e gli assistenti virtuali."
+                "L'NLP viene utilizzato per la traduzione automatica, i chatbot, l'analisi del sentiment."
             ]
         }
 
-        # 🔹 Respuestas emocionales (fallback empático)
+        # 🔹 Fallback emocional por idioma
         self.emotional_fallbacks = {
             "es": {
                 "negative": "Vaya, lamento escuchar eso. Espero que todo mejore.",
@@ -63,10 +63,9 @@ class PLNChatbot:
             }
         }
 
-        # 🔹 Cargar corpus por idioma
+        # 🔹 Carga de corpus
         for lang, path in corpus_paths.items():
             logger.info(f"Loading corpus for language: {lang}")
-
             with open(path, encoding="utf-8", errors="ignore") as f:
                 sentences = nltk.sent_tokenize(f.read())
 
@@ -87,45 +86,39 @@ class PLNChatbot:
 
         logger.info("PLNChatbot initialized successfully")
 
-    # 🔹 Detección de saludo
+    # 🔹 Saludos
     def greet(self, text: str, lang: str):
         for word in text.lower().split():
             if word in self.greetings.get(lang, []):
-                logger.info("Greeting detected")
                 return random.choice(self.greetings[lang])
         return None
 
-    # 🔹 Generación de respuesta con contexto
+    # 🔹 Respuesta con contexto real
     def generate_response_with_context(self, text: str, lang: str, context: list):
-        logger.info("Generating response with context")
-
         sentences = self.corpora.get(lang)
         vectorizer = self.vectorizers.get(lang)
 
         if not sentences:
-            logger.warning("Language not supported")
             return "No he entendido tu mensaje."
 
         clean_context = list(dict.fromkeys(context))
-
         query_text = text
+
         if len(text.split()) < 6 and clean_context:
             query_text = clean_context[-1] + " " + text
-            logger.info("Short query expanded using context")
 
-        temp_sentences = sentences + clean_context + [query_text]
+        temp_corpus = sentences + clean_context + [query_text]
+        tfidf = vectorizer.fit_transform(temp_corpus)
 
-        tfidf = vectorizer.fit_transform(temp_sentences)
-        similarity = cosine_similarity(tfidf[-1], tfidf).flatten()
+        similarity = cosine_similarity(tfidf[-1], tfidf[:-1]).flatten()
+        best_idx = similarity.argmax()
+        best_score = similarity[best_idx]
 
-        for idx in similarity.argsort()[::-1]:
-            if idx == len(temp_sentences) - 1:
-                continue
-            if similarity[idx] > 0:
-                logger.info(f"Response selected (similarity={similarity[idx]:.3f})")
-                return temp_sentences[idx]
+        logger.info(f"Best similarity score: {best_score:.3f}")
 
-        logger.warning("No suitable response found")
+        if best_score > 0.20:
+            return temp_corpus[best_idx]
+
         return "No he entendido tu mensaje."
 
     # 🔹 Chat principal
@@ -134,38 +127,32 @@ class PLNChatbot:
         logger.info(f"User message: {text}")
 
         db = SessionLocal()
-
-        detected_lang = detect_language(text)
         supported_langs = set(self.corpora.keys())
 
-        lang = detected_lang if detected_lang in supported_langs else None
+        # 🔹 Idioma por sesión (solo si es fiable)
+        if session_id in self.session_language:
+            lang = self.session_language[session_id]
+        else:
+            detected = detect_language(text)
+            lower = text.lower()
 
-        # 🔹 Heurística de rescate por vocabulario (MUY IMPORTANTE)
-        lower_text = text.lower()
-
-        if not lang:
-            if any(w in lower_text for w in ["oggi", "brutto", "brutta", "triste", "male"]):
+            if detected in supported_langs:
+                lang = detected
+            elif any(w in lower for w in ["oggi", "brutto", "triste", "male"]):
                 lang = "it"
-            elif any(w in lower_text for w in ["aujourd", "mauvais", "triste", "mal"]):
+            elif any(w in lower for w in ["aujourd", "mauvais", "triste"]):
                 lang = "fr"
             else:
-                lang = "en"  # fallback neutro
+                lang = "en"
 
+            if len(text.split()) >= 3:
+                self.session_language[session_id] = lang
 
-        logger.info(f"Detected language: {detected_lang} | Using: {lang}")
+        logger.info(f"Language used: {lang}")
 
-        # 🔹 Sentimiento
         sentiment = analyze_sentiment(text)
-        logger.info(
-            f"Sentiment detected: {sentiment['sentiment']} "
-            f"(polarity={sentiment['polarity']})"
-        )
-
-        # 🔹 Contexto conversacional
         context = get_recent_user_messages(db=db, session_id=session_id, limit=3)
-        logger.info(f"Context retrieved: {len(context)} messages")
 
-        # 🔹 Generar respuesta
         greeting = self.greet(text, lang)
 
         if greeting:
@@ -173,26 +160,16 @@ class PLNChatbot:
         else:
             response = self.generate_response_with_context(text, lang, context)
 
-            # 🔹 Fallback emocional (MISMO idioma siempre)
             if response == "No he entendido tu mensaje.":
-                emotional_msg = self.emotional_fallbacks.get(lang, {}).get(
-                    sentiment["sentiment"]
-                )
-                if emotional_msg:
-                    logger.info("Emotional fallback applied")
-                    response = emotional_msg
+                fallback = self.emotional_fallbacks.get(lang, {}).get(sentiment["sentiment"])
+                if fallback:
+                    response = fallback
 
-        # 🔹 Emojis finales (sin duplicar)
-        already_has_emoji = any(e in response for e in ["💙", "😊"])
-        if not already_has_emoji:
-            if sentiment["sentiment"] == "negative":
-                response += " 💙"
-            elif sentiment["sentiment"] == "positive":
-                response += " 😊"
+        if sentiment["sentiment"] == "negative" and "💙" not in response:
+            response += " 💙"
+        elif sentiment["sentiment"] == "positive" and "😊" not in response:
+            response += " 😊"
 
-        logger.info(f"Final bot response: {response}")
-
-        # 🔹 Persistencia
         save_message(
             db=db,
             session_id=session_id,
@@ -204,7 +181,6 @@ class PLNChatbot:
         )
 
         db.close()
-        logger.info("Conversation saved to database")
 
         return {
             "response": response,
@@ -212,4 +188,3 @@ class PLNChatbot:
             "sentiment": sentiment,
             "context_used": context
         }
-

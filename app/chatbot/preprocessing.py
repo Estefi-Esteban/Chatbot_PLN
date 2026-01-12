@@ -14,7 +14,6 @@ PUNCTUATION_TABLE = dict((ord(p), None) for p in string.punctuation)
 
 lemmatizer_en = WordNetLemmatizer()
 
-# 🔹 1. Mapa para NLTK (ISO code -> Full Name)
 NLTK_LANG_MAP = {
     "es": "spanish",
     "en": "english",
