@@ -1,7 +1,5 @@
 from textblob import TextBlob
 
-# 🔹 DICCIONARIO DE RESCATE PARA ESPAÑOL
-# Como TextBlob solo sabe inglés, ayudamos con palabras clave comunes en español
 POSITIVE_ES = {
     "feliz", "bien", "bueno", "buena", "mejor", "genial", "encanta", 
     "amo", "gracias", "excelente", "alegre", "contento", "contenta", 

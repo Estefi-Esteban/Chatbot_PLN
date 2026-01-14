@@ -65,7 +65,6 @@ st.sidebar.markdown("""
 ✔ FastAPI + Streamlit
 """)
 
-# 🔹 Botón nueva conversación
 if st.sidebar.button("🆕 Nueva conversación"):
     st.session_state.messages = []
     st.session_state.session_id = str(uuid.uuid4())

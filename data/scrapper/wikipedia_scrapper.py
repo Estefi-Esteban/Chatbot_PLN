@@ -3,7 +3,6 @@ import os
 import re
 from typing import Dict
 
-# User-Agent obligatorio
 USER_AGENT = "ChatbotPLN_Estefania/1.0 (chatbot@proyecto.com)"
 
 WIKI_PAGES: Dict[str, str] = {
@@ -13,13 +12,8 @@ WIKI_PAGES: Dict[str, str] = {
     "it": "Elaborazione_del_linguaggio_naturale"
 }
 
-# --- CAMBIO IMPORTANTE AQUÍ ---
-# Ajusta esta ruta a donde TÚ tienes tus carpetas.
-# He quitado el "app/" del principio para que busque en la carpeta data actual.
 BASE_PATH = "data/corpora/raw"
 
-# --- VERIFICACIÓN DE SEGURIDAD ---
-# En vez de crear la carpeta, verificamos si existe.
 if not os.path.exists(BASE_PATH):
     print(f"❌ ERROR: No encuentro la carpeta: {os.path.abspath(BASE_PATH)}")
     print("   El script se ha detenido para no crear carpetas nuevas.")
@@ -27,7 +21,7 @@ if not os.path.exists(BASE_PATH):
     exit()
 
 def clean_text(text: str) -> str:
-    text = re.sub(r"\[\d+\]", "", text)
+    text = re.sub(r"\[\d+\]", " ", text) 
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
@@ -48,7 +42,6 @@ def scrape_wikipedia(lang: str, title: str) -> None:
 
         raw_text = page.text
         
-        # Filtro suave para asegurar contenido
         paragraphs = []
         for p in raw_text.split("\n"):
             cleaned = clean_text(p)
@@ -63,7 +56,6 @@ def scrape_wikipedia(lang: str, title: str) -> None:
 
         file_path = os.path.join(BASE_PATH, f"corpus_{lang}_api.txt")
         
-        # Aquí solo escribimos el archivo (mode 'w')
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(corpus)
 

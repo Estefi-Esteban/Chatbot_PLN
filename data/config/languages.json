@@ -1,0 +1,30 @@
+{
+  "es": {
+    "intent_map": {
+      "history": ["historia", "origen", "empezó", "inicio", "evolución", "revolución", "1950", "años 50", "turing", "cuándo", "creó"],
+      "usage": ["para qué", "utiliza", "uso", "sirve", "aplicaciones", "traducción", "chatbot", "ayuda"],
+      "definition": ["qué es", "definición", "significa", "concepto", "define"]
+    }
+  },
+  "en": {
+    "intent_map": {
+      "history": ["history", "origin", "started", "start", "begin", "background", "who proposed", "1950", "turing", "when", "evolution"],
+      "usage": ["used for", "usage", "applications", "tasks", "serve", "purpose", "help", "what can"],
+      "definition": ["what is", "definition", "meaning", "stands for", "define", "explain"]
+    }
+  },
+  "fr": {
+    "intent_map": {
+      "history": ["histoire", "origine", "quand", "année", "commencé", "début", "évolution"],
+      "usage": ["pour quoi", "usage", "servir", "sert", "applications", "utilisé"],
+      "definition": ["qu'est-ce", "définition", "signifie", "c'est quoi", "définir"]
+    }
+  },
+  "it": {
+    "intent_map": {
+      "history": ["storia", "origine", "quando", "anno", "iniziato", "evoluzione", "nato"],
+      "usage": ["per cosa", "uso", "servire", "applicazioni", "utilizzato"],
+      "definition": ["cos'è", "definizione", "significa", "spiegare"]
+    }
+  }
+}

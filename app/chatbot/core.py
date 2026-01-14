@@ -1,6 +1,15 @@
+import json
+import os
+import random
+import nltk
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import TruncatedSVD
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import Normalizer
 
+# Asegúrate de que estos imports coincidan con tu estructura de carpetas
 from .language import detect_language
 from .sentiment import analyze_sentiment
 from .preprocessing import normalize_text
@@ -9,74 +18,64 @@ from app.db.database import SessionLocal
 from app.db.crud import save_message, get_recent_user_messages
 from app.utils.logger import get_logger
 
-import nltk
-import random
-
 logger = get_logger("PLNChatbot")
 
-
 class PLNChatbot:
-    def __init__(self, corpus_paths: dict):
-        logger.info("Initializing PLNChatbot")
+    def __init__(self, corpus_paths: dict, config_path="data/config/languages.json"):
+        logger.info("Initializing LSA-PLNChatbot...")
 
         self.corpora = {}
-        self.vectorizers = {}
+        self.models = {}
+        self.encoded_corpora = {}
         self.session_language = {}
 
-        # 🔹 Inyecciones de conocimiento
+        # 🔹 1. Cargar Configuración de Intents
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf-8") as f:
+                self.lang_config = json.load(f)
+        else:
+            logger.error(f"Config file not found at {config_path}")
+            self.lang_config = {}
+
+        # 🔹 2. Inyecciones de conocimiento "Vitaminadas"
         self.knowledge_injections = {
             "es": [
-                "El PLN se utiliza para traducción automática, chatbots, análisis de sentimientos y asistentes virtuales.",
-                "La inteligencia artificial sirve para automatizar tareas, resolver problemas complejos y ayudar en la toma de decisiones.",
-                "El PLN o Procesamiento del Lenguaje Natural es la rama de la IA que estudia la comunicación entre humanos y máquinas."
+                "El PLN o Procesamiento del Lenguaje Natural es la definición de la rama de la IA que estudia la comunicación entre humanos y máquinas.",
+                "El PLN se utiliza y tiene aplicaciones para traducción automática, chatbots, análisis de sentimientos y asistentes virtuales.",
+                "La historia y origen del PLN empezó en la década de 1950 con Alan Turing y el test de Turing."
             ],
             "en": [
-                "NLP is used for machine translation, chatbots, sentiment analysis, and virtual assistants.",
-                "Artificial Intelligence is used to automate tasks, solve complex problems, and assist in decision making.",
-                "NLP or Natural Language Processing is a field of AI focused on the interaction between computers and human language."
+                "NLP or Natural Language Processing is the definition of a field of AI focused on the interaction between computers and human language.",
+                # 🔥 CAMBIO AQUÍ: Más keywords para ganar a la frase de Wikipedia
+                "The applications, tasks and usage of NLP include machine translation, chatbots, sentiment analysis, recognition and virtual assistants.",
+                "The history and origin of NLP started in the 1950s with Alan Turing and the Turing Test."
             ],
             "fr": [
-                "Le TALN est utilisé pour la traduction automatique, les chatbots, l'analyse des sentiments et les assistants virtuels."
+                "Le TALN est défini comme le traitement automatique du langage naturel.",
+                "Les applications et usages du TALN servent à la traduction automatique, les chatbots et l'analyse.",
+                "L'histoire et l'origine du TALN a commencé dans les années 1950 avec Turing."
             ],
             "it": [
-                "L'NLP viene utilizzato per la traduzione automatica, i chatbot, l'analisi del sentiment."
+                "L'NLP è definito come l'elaborazione del linguaggio naturale.",
+                "L'NLP viene utilizzato e ha applicazioni per la traduzione automatica, i chatbot e l'analisi.",
+                "La storia e l'origine dell'NLP inizia negli anni '50 con Alan Turing."
             ]
         }
 
-        # 🔹 Fallback emocional por idioma
+        # 🔹 3. Fallback Emocional
         self.emotional_fallbacks = {
             "es": {
-                "negative": "Vaya, lamento escuchar eso. Espero que todo mejore.",
-                "positive": "¡Me alegra mucho leer eso! ¿En qué puedo ayudarte hoy?"
+                "negative": "Vaya, lamento escuchar eso. Espero que todo mejore. 💙",
+                "positive": "¡Me alegra mucho leer eso! ¿En qué puedo ayudarte hoy? 😊"
             },
             "en": {
-                "negative": "I'm sorry to hear that. I hope things get better.",
-                "positive": "That's great to hear! How can I help you today?"
+                "negative": "I'm sorry to hear that. I hope things get better. 💙",
+                "positive": "That's great to hear! How can I help you today? 😊"
             },
-            "fr": {
-                "negative": "Je suis désolé d'entendre cela. J’espère que les choses s’amélioreront.",
-                "positive": "C’est une excellente nouvelle !"
-            },
-            "it": {
-                "negative": "Mi dispiace sentirlo. Spero che le cose migliorino.",
-                "positive": "Che bella notizia!"
-            }
+            "fr": {"negative": "Je suis désolé d'entendre cela. 💙", "positive": "C’est excellent ! 😊"},
+            "it": {"negative": "Mi dispiace sentirlo. 💙", "positive": "Che bella notizia! 😊"}
         }
 
-        # 🔹 Carga de corpus
-        for lang, path in corpus_paths.items():
-            logger.info(f"Loading corpus for language: {lang}")
-            with open(path, encoding="utf-8", errors="ignore") as f:
-                sentences = nltk.sent_tokenize(f.read())
-
-            sentences.extend(self.knowledge_injections.get(lang, []))
-
-            self.corpora[lang] = sentences
-            self.vectorizers[lang] = TfidfVectorizer(
-                tokenizer=lambda text, l=lang: normalize_text(text, l)
-            )
-
-        # 🔹 Saludos
         self.greetings = {
             "es": ["hola", "buenas", "saludos", "qué tal"],
             "en": ["hello", "hi", "hey"],
@@ -84,92 +83,159 @@ class PLNChatbot:
             "it": ["ciao", "salve"]
         }
 
+        # 🔹 4. Entrenar Modelos
+        for lang, path in corpus_paths.items():
+            self._train_language_model(lang, path)
+
         logger.info("PLNChatbot initialized successfully")
 
-    # 🔹 Saludos
+    def _train_language_model(self, lang, path):
+        """Entrena el pipeline LSA (TF-IDF + SVD) con limpieza y boosting."""
+        logger.info(f"Training LSA model for language: {lang}")
+        
+        try:
+            with open(path, encoding="utf-8", errors="ignore") as f:
+                sentences = nltk.sent_tokenize(f.read())
+        except FileNotFoundError:
+            logger.error(f"Corpus file not found: {path}")
+            return
+
+        # 🔹 1. LIMPIEZA DE "BASURA" (Anti-Wikipedia footer)
+        # Filtramos frases que parecen bibliografía o referencias rotas
+        clean_sentences = []
+        garbage_markers = ["encyclopædia", "britannica", "open library", "su open", "su enciclopedia", "(en)", "isbn", "doi:"]
+        
+        for s in sentences:
+            s_lower = s.lower()
+            # Si contiene marcadores de basura o es muy corta, la ignoramos
+            if len(s) > 20 and not any(marker in s_lower for marker in garbage_markers):
+                clean_sentences.append(s.strip())
+
+        sentences = clean_sentences
+
+        # 🔹 2. BOOSTING DE INYECCIONES (El truco maestro)
+        # Multiplicamos las inyecciones x5. 
+        # Esto hace que pesen mucho más matemáticamente que una frase random de Wikipedia.
+        injections = self.knowledge_injections.get(lang, [])
+        sentences.extend(injections * 5) 
+        
+        if not sentences:
+            return
+
+        self.corpora[lang] = sentences
+
+        # Configuración LSA
+        n_components = min(100, len(sentences) - 1)
+        if n_components < 2: n_components = 2 
+
+        self.models[lang] = make_pipeline(
+            TfidfVectorizer(tokenizer=lambda text: normalize_text(text, lang)),
+            TruncatedSVD(n_components=n_components, random_state=42),
+            Normalizer(copy=False)
+        )
+
+        try:
+            self.encoded_corpora[lang] = self.models[lang].fit_transform(sentences)
+        except Exception as e:
+            logger.error(f"Error training model for {lang}: {e}")
+
+    def detect_intent(self, text: str, lang: str) -> str:
+        text = text.lower()
+        intent_map = self.lang_config.get(lang, {}).get("intent_map", {})
+        
+        for intent, keywords in intent_map.items():
+            if any(k in text for k in keywords):
+                return intent
+        return "general"
+
+    def get_response_lsa(self, text: str, lang: str, context: list):
+        """Genera respuesta usando búsqueda semántica (LSA) con anclaje de contexto."""
+        if lang not in self.models:
+            return None # Retornamos None para que el fallback lo maneje
+
+        intent = self.detect_intent(text, lang)
+        
+        query_text = text
+        
+        # 🔥 MEJORA CRÍTICA: Anclaje de Contexto
+        if intent != "general":
+            keywords = self.lang_config.get(lang, {}).get("intent_map", {}).get(intent, [])
+            query_text += " " + " ".join(keywords)
+            
+            # Forzamos que la búsqueda entienda el tema principal si hay intención clara
+            # Esto ayuda cuando el usuario usa pronombres vagos como "it"
+            query_text += " NLP Natural Language Processing PLN" 
+
+        if context:
+            query_text = context[-1] + " " + query_text
+
+        pipeline = self.models[lang]
+        try:
+            query_vec = pipeline.transform([query_text])
+            similarities = cosine_similarity(query_vec, self.encoded_corpora[lang]).flatten()
+            
+            best_idx = similarities.argmax()
+            best_score = similarities[best_idx]
+            
+            logger.info(f"Intent: {intent} | Best Score (LSA): {best_score}")
+
+            if best_score > 0.25:
+                return self.corpora[lang][best_idx]
+            
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+
+        return None
+
     def greet(self, text: str, lang: str):
         for word in text.lower().split():
             if word in self.greetings.get(lang, []):
                 return random.choice(self.greetings[lang])
         return None
 
-    # 🔹 Respuesta con contexto real
-    def generate_response_with_context(self, text: str, lang: str, context: list):
-        sentences = self.corpora.get(lang)
-        vectorizer = self.vectorizers.get(lang)
-
-        if not sentences:
-            return "No he entendido tu mensaje."
-
-        clean_context = list(dict.fromkeys(context))
-        query_text = text
-
-        if len(text.split()) < 6 and clean_context:
-            query_text = clean_context[-1] + " " + text
-
-        temp_corpus = sentences + clean_context + [query_text]
-        tfidf = vectorizer.fit_transform(temp_corpus)
-
-        similarity = cosine_similarity(tfidf[-1], tfidf[:-1]).flatten()
-        best_idx = similarity.argmax()
-        best_score = similarity[best_idx]
-
-        logger.info(f"Best similarity score: {best_score:.3f}")
-
-        if best_score > 0.20:
-            return temp_corpus[best_idx]
-
-        return "No he entendido tu mensaje."
-
-    # 🔹 Chat principal
     def chat(self, text: str, session_id: str = "default"):
-        logger.info(f"New message | session_id={session_id}")
-        logger.info(f"User message: {text}")
-
+        logger.info(f"Msg: {text} | Session: {session_id}")
+        
         db = SessionLocal()
         supported_langs = set(self.corpora.keys())
 
-        # 🔹 Idioma por sesión (solo si es fiable)
+        # 🔹 Detección de Idioma (Usando tu nueva lógica mejorada)
         if session_id in self.session_language:
             lang = self.session_language[session_id]
         else:
             detected = detect_language(text)
-            lower = text.lower()
-
             if detected in supported_langs:
                 lang = detected
-            elif any(w in lower for w in ["oggi", "brutto", "triste", "male"]):
-                lang = "it"
-            elif any(w in lower for w in ["aujourd", "mauvais", "triste"]):
-                lang = "fr"
             else:
-                lang = "en"
-
+                lang = "en" # Fallback por defecto
+            
             if len(text.split()) >= 3:
                 self.session_language[session_id] = lang
 
-        logger.info(f"Language used: {lang}")
-
         sentiment = analyze_sentiment(text)
-        context = get_recent_user_messages(db=db, session_id=session_id, limit=3)
+        intent = self.detect_intent(text, lang)
+        context_raw = get_recent_user_messages(db=db, session_id=session_id, limit=2)
+        
+        # 1. Saludo
+        response = self.greet(text, lang)
 
-        greeting = self.greet(text, lang)
+        if not response:
+            # 🔥 LÓGICA DE PRIORIDAD EMOCIONAL
+            # Si NO es una pregunta técnica (historia/uso) Y hay emoción fuerte,
+            # respondemos con el fallback emocional primero.
+            if intent == "general" and sentiment["sentiment"] != "neutral":
+                response = self.emotional_fallbacks.get(lang, {}).get(sentiment["sentiment"])
+            
+            # Si no hemos respondido por emoción, buscamos en el corpus (LSA)
+            if not response:
+                 response = self.get_response_lsa(text, lang, context_raw)
 
-        if greeting:
-            response = greeting
-        else:
-            response = self.generate_response_with_context(text, lang, context)
+        # 2. Fallback Final (Si LSA falla y no hubo emoción previa)
+        if not response:
+            fallback = self.emotional_fallbacks.get(lang, {}).get(sentiment["sentiment"])
+            response = fallback if fallback else "I didn't understand. / No entendí."
 
-            if response == "No he entendido tu mensaje.":
-                fallback = self.emotional_fallbacks.get(lang, {}).get(sentiment["sentiment"])
-                if fallback:
-                    response = fallback
-
-        if sentiment["sentiment"] == "negative" and "💙" not in response:
-            response += " 💙"
-        elif sentiment["sentiment"] == "positive" and "😊" not in response:
-            response += " 😊"
-
+        # Guardar en BD
         save_message(
             db=db,
             session_id=session_id,
@@ -179,12 +245,12 @@ class PLNChatbot:
             sentiment=sentiment["sentiment"],
             polarity=sentiment["polarity"]
         )
-
         db.close()
 
         return {
             "response": response,
             "language": lang,
             "sentiment": sentiment,
-            "context_used": context
+            "intent": intent,
+            "context_used": context_raw # ✅ Soluciona el error 500
         }
