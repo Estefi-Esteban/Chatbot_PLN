@@ -1,6 +1,11 @@
 # 🤖 Chatbot PLN Multilenguaje con Análisis Semántico y Emocional
 
-Proyecto académico avanzado de **Procesamiento del Lenguaje Natural (PLN)** que implementa un **chatbot multilenguaje** capaz de comprender preguntas técnicas, detectar intención, analizar sentimiento y responder utilizando **búsqueda semántica** sobre corpus reales obtenidos automáticamente desde Wikipedia.
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Terminado-success?style=for-the-badge)
+
+Proyecto avanzado de **Procesamiento del Lenguaje Natural (PLN)** que implementa un **chatbot multilenguaje** capaz de comprender preguntas técnicas, detectar intención, analizar sentimiento y responder utilizando **búsqueda semántica** sobre corpus reales obtenidos automáticamente desde Wikipedia.
 
 ---
 
@@ -245,5 +250,49 @@ sqlalchemy
 ### 1. Instalar dependencias
 ```bash
 pip install -r requirements.txt
+```
 
+### 2. Ejecutar el backend
+```bash
+uvicorn app.main:app --reload
+```
 
+### 3. Ejecutar la interfaz
+```bash
+streamlit run streamlit_app.py
+```
+
+---
+
+## 🧪 Ejemplos de Uso
+
+- 📌 **Preguntas técnicas**
+  - ¿Qué es el procesamiento del lenguaje natural?
+  - *What are NLP applications?*
+
+- 💬 **Conversación emocional**
+  - *Hoy es un día horrible*
+
+- 🌍 **Multilenguaje**
+  - *Aujourd’hui est une mauvaise journée*
+  - *Oggi mi sento triste*
+
+---
+
+## 📦 Repositorio
+
+El código fuente completo está disponible en GitHub y puede ampliarse fácilmente con:
+
+* Nuevos idiomas
+* Más fuentes de datos
+* Modelos híbridos (PLN + LLM)
+* Integración de Transformers de Hugging Face
+
+---
+
+## 👩‍🎓 Autora
+
+**Estefanía**
+
+Estudiante de Inteligencia Artificial  
+Proyecto de Procesamiento del Lenguaje Natural
