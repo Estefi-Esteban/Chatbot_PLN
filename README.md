@@ -94,6 +94,7 @@ El idioma se detecta automáticamente y se mantiene durante toda la sesión.
 
 ## 📁 Estructura del Proyecto
 
+```text
 CHATBOT_PLN/
 │
 ├── app/
@@ -155,7 +156,7 @@ CHATBOT_PLN/
 ├── README.md                      # Documentación del proyecto
 ├── .gitignore
 └── venv/                          # Entorno virtual
-
+```
 
 ---
 
