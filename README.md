@@ -92,37 +92,70 @@ El idioma se detecta automáticamente y se mantiene durante toda la sesión.
 
 ## 🗂️ Estructura del proyecto
 
-📦 ChatbotPLN
+## 📁 Estructura del Proyecto
+
+CHATBOT_PLN/
 │
 ├── app/
-│ ├── api/ # Backend FastAPI
-│ ├── core/
-│ │ ├── core.py # Lógica principal del chatbot
-│ │ ├── language.py # Detección de idioma
-│ │ ├── sentiment.py # Análisis de sentimiento
-│ │ └── preprocessing.py # Limpieza y normalización de texto
-│ │
-│ ├── data/
-│ │ ├── corpora/
-│ │ │ ├── raw/ # Corpus obtenido por scraping
-│ │ │ └── processed/ # Corpus limpio y procesado
-│ │ └── config/
-│ │ └── languages.json # Configuración de intenciones
-│ │
-│ ├── db/
-│ │ ├── database.py # Configuración SQLite
-│ │ └── crud.py # Operaciones CRUD
-│ │
-│ └── utils/
-│ └── logger.py # Sistema de logging
+│   ├── __pycache__/
+│   │
+│   ├── api/
+│   │   ├── __pycache__/
+│   │   ├── __init__.py
+│   │   └── routes.py              # Endpoints FastAPI del chatbot
+│   │
+│   ├── chatbot/
+│   │   ├── __pycache__/
+│   │   ├── core.py                # Núcleo del chatbot (LSA + contexto + emociones)
+│   │   ├── language.py            # Detección de idioma (heurísticas + langdetect)
+│   │   ├── preprocessing.py       # Normalización y limpieza de texto
+│   │   └── sentiment.py           # Análisis de sentimiento multilenguaje
+│   │
+│   ├── db/
+│   │   ├── __pycache__/
+│   │   ├── crud.py                # Operaciones CRUD para la base de datos
+│   │   ├── database.py            # Configuración SQLite
+│   │   ├── models.py              # Modelos ORM
+│   │   └── __init__.py
+│   │
+│   ├── utils/
+│   │   ├── __pycache__/
+│   │   ├── logger.py              # Sistema de logging
+│   │   └── download_nltk.py       # Descarga automática de recursos NLTK
+│   │
+│   ├── main.py                    # Punto de entrada FastAPI
+│   └── schemas.py                 # Esquemas Pydantic
 │
-├── scrappers/
-│ ├── wikipedia_scrapper.py # Scraping automático desde Wikipedia
-│ └── scrapper_corpus.py # Procesamiento del corpus
+├── data/
+│   ├── config/
+│   │   └── languages.json         # Intents y keywords por idioma
+│   │
+│   ├── corpora/
+│   │   ├── processed/             # Corpus limpio y tokenizado
+│   │   │   ├── corpus_en.txt
+│   │   │   ├── corpus_es.txt
+│   │   │   ├── corpus_fr.txt
+│   │   │   └── corpus_it.txt
+│   │   │
+│   │   └── raw/                   # Corpus original extraído de Wikipedia
+│   │       ├── corpus_en_api.txt
+│   │       ├── corpus_es_api.txt
+│   │       ├── corpus_fr_api.txt
+│   │       └── corpus_it_api.txt
+│   │       
+│   ├── corpus_processor.py        # Procesamiento del corpus
+│   └── scrapper/
+│       └── wikipedia_scrapper.py  # Scraping automático de Wikipedia
 │
-├── streamlit_app.py # Interfaz web
-├── requirements.txt # Dependencias del proyecto
-└── README.md
+├── frontend/
+│   └── streamlit_app.py           # Interfaz gráfica con Streamlit
+│
+├── chatbot.db                     # Base de datos SQLite
+├── requirements.txt               # Dependencias del proyecto
+├── README.md                      # Documentación del proyecto
+├── .gitignore
+└── venv/                          # Entorno virtual
+
 
 ---
 
@@ -146,6 +179,28 @@ El corpus pasa por:
 - Normalización lingüística (stopwords, stemming, lematización)
 
 Esto garantiza un **corpus limpio, coherente y de alta calidad**.
+
+---
+
+## 🛠️ Cómo ampliar el conocimiento (Corpus)
+
+El chatbot puede aprender sobre nuevos temas fácilmente añadiendo nuevas fuentes de Wikipedia. Para ello, sigue este flujo de trabajo:
+
+### 1. Añadir nuevas fuentes
+Modifica el archivo `data/scrapper/wikipedia_scrapper.py`. Busca la lista de temas/títulos y añade las páginas de Wikipedia que desees (ej. *"Deep Learning"*, *"Transformer (machine learning model)"*).
+
+### 2. Ejecutar el Scraper
+Descarga la información en bruto ("raw") ejecutando:
+```bash
+python data/cropora/corpus_processor.py
+```
+
+### 3. Procesar y Limpiar el Corpus
+Es **crucial** ejecutar el procesador después del scraping. Este script normaliza el texto, elimina ruidoy prepara los datos para el modelo TF-IDF:
+```bash
+python data/corpora/corpus_processor.py 
+```
+**Nota**: Si no ejecutas este paso, el bot no "verá" los nuevos datos añadidos.
 
 ---
 
