@@ -176,7 +176,7 @@ if "messages" not in st.session_state:
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/4712/4712027.png", width=80) 
-    st.title("NLP Assistant")
+    st.title("PLN ChatbotAssistant")
     st.markdown("---")
     
     st.markdown("""
