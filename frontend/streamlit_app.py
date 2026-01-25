@@ -214,13 +214,10 @@ def get_sentiment_icon(sentiment):
     if "negativ" in s: return "😔"
     return "😐"
 
-# ---------------- CHAT AREA (SCROLLABLE) ----------------
-# IMPORTANTE: El HTML aquí NO tiene espacios al principio de las líneas
 chat_html = """<div class="scroll-container" id="chat-container">"""
 
 for msg in st.session_state.messages:
     if msg["role"] == "user":
-        # Mensaje de USUARIO (Sin indentación)
         chat_html += f"""
 <div class="chat-row user-row">
     <div class="msg-bubble user-msg">{msg['content']}</div>
@@ -228,7 +225,6 @@ for msg in st.session_state.messages:
 </div>
 """
     else:
-        # Mensaje de BOT (Sin indentación)
         sentiment_cls = get_sentiment_class(msg.get('sentiment', 'Neutral'))
         sentiment_icon = get_sentiment_icon(msg.get('sentiment', 'Neutral'))
         
@@ -245,7 +241,6 @@ for msg in st.session_state.messages:
 </div>
 """
 
-# Script JS para bajar el scroll automáticamente
 chat_html += """
 <script>
     var container = document.getElementById("chat-container");

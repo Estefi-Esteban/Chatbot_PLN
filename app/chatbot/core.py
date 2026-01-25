@@ -29,7 +29,6 @@ class PLNChatbot:
         self.encoded_corpora = {}
         self.session_language = {}
 
-        # 🔹 1. Cargar Configuración de Intents
         if os.path.exists(config_path):
             with open(config_path, "r", encoding="utf-8") as f:
                 self.lang_config = json.load(f)
@@ -37,7 +36,6 @@ class PLNChatbot:
             logger.error(f"Config file not found at {config_path}")
             self.lang_config = {}
 
-        # 🔹 2. Inyecciones de conocimiento "Vitaminadas"
         self.knowledge_injections = {
             "es": [
                 "El PLN o Procesamiento del Lenguaje Natural es la definición de la rama de la IA que estudia la comunicación entre humanos y máquinas.",
@@ -46,7 +44,6 @@ class PLNChatbot:
             ],
             "en": [
                 "NLP or Natural Language Processing is the definition of a field of AI focused on the interaction between computers and human language.",
-                # 🔥 CAMBIO AQUÍ: Más keywords para ganar a la frase de Wikipedia
                 "The applications, tasks and usage of NLP include machine translation, chatbots, sentiment analysis, recognition and virtual assistants.",
                 "The history and origin of NLP started in the 1950s with Alan Turing and the Turing Test."
             ],
@@ -62,7 +59,6 @@ class PLNChatbot:
             ]
         }
 
-        # 🔹 3. Fallback Emocional
         self.emotional_fallbacks = {
             "es": {
                 "negative": "Vaya, lamento escuchar eso. Espero que todo mejore. 💙",
@@ -83,7 +79,6 @@ class PLNChatbot:
             "it": ["ciao", "salve"]
         }
 
-        # 🔹 4. Entrenar Modelos
         for lang, path in corpus_paths.items():
             self._train_language_model(lang, path)
 
@@ -100,22 +95,16 @@ class PLNChatbot:
             logger.error(f"Corpus file not found: {path}")
             return
 
-        # 🔹 1. LIMPIEZA DE "BASURA" (Anti-Wikipedia footer)
-        # Filtramos frases que parecen bibliografía o referencias rotas
         clean_sentences = []
         garbage_markers = ["encyclopædia", "britannica", "open library", "su open", "su enciclopedia", "(en)", "isbn", "doi:"]
         
         for s in sentences:
             s_lower = s.lower()
-            # Si contiene marcadores de basura o es muy corta, la ignoramos
             if len(s) > 20 and not any(marker in s_lower for marker in garbage_markers):
                 clean_sentences.append(s.strip())
 
         sentences = clean_sentences
 
-        # 🔹 2. BOOSTING DE INYECCIONES (El truco maestro)
-        # Multiplicamos las inyecciones x5. 
-        # Esto hace que pesen mucho más matemáticamente que una frase random de Wikipedia.
         injections = self.knowledge_injections.get(lang, [])
         sentences.extend(injections * 5) 
         
@@ -124,7 +113,6 @@ class PLNChatbot:
 
         self.corpora[lang] = sentences
 
-        # Configuración LSA
         n_components = min(100, len(sentences) - 1)
         if n_components < 2: n_components = 2 
 
@@ -157,13 +145,10 @@ class PLNChatbot:
         
         query_text = text
         
-        # 🔥 MEJORA CRÍTICA: Anclaje de Contexto
         if intent != "general":
             keywords = self.lang_config.get(lang, {}).get("intent_map", {}).get(intent, [])
             query_text += " " + " ".join(keywords)
             
-            # Forzamos que la búsqueda entienda el tema principal si hay intención clara
-            # Esto ayuda cuando el usuario usa pronombres vagos como "it"
             query_text += " NLP Natural Language Processing PLN" 
 
         if context:
@@ -199,7 +184,6 @@ class PLNChatbot:
         db = SessionLocal()
         supported_langs = set(self.corpora.keys())
 
-        # 🔹 Detección de Idioma (Usando tu nueva lógica mejorada)
         if session_id in self.session_language:
             lang = self.session_language[session_id]
         else:
@@ -207,7 +191,7 @@ class PLNChatbot:
             if detected in supported_langs:
                 lang = detected
             else:
-                lang = "en" # Fallback por defecto
+                lang = "en"
             
             if len(text.split()) >= 3:
                 self.session_language[session_id] = lang
@@ -216,21 +200,15 @@ class PLNChatbot:
         intent = self.detect_intent(text, lang)
         context_raw = get_recent_user_messages(db=db, session_id=session_id, limit=2)
         
-        # 1. Saludo
         response = self.greet(text, lang)
 
         if not response:
-            # 🔥 LÓGICA DE PRIORIDAD EMOCIONAL
-            # Si NO es una pregunta técnica (historia/uso) Y hay emoción fuerte,
-            # respondemos con el fallback emocional primero.
             if intent == "general" and sentiment["sentiment"] != "neutral":
                 response = self.emotional_fallbacks.get(lang, {}).get(sentiment["sentiment"])
             
-            # Si no hemos respondido por emoción, buscamos en el corpus (LSA)
             if not response:
                  response = self.get_response_lsa(text, lang, context_raw)
 
-        # 2. Fallback Final (Si LSA falla y no hubo emoción previa)
         if not response:
             fallback = self.emotional_fallbacks.get(lang, {}).get(sentiment["sentiment"])
             response = fallback if fallback else "I didn't understand. / No entendí."
@@ -252,5 +230,5 @@ class PLNChatbot:
             "language": lang,
             "sentiment": sentiment,
             "intent": intent,
-            "context_used": context_raw # ✅ Soluciona el error 500
+            "context_used": context_raw 
         }

@@ -112,7 +112,7 @@ CHATBOT_PLN/
 │   ├── db/
 │   │   ├── __pycache__/
 │   │   ├── crud.py                # Operaciones CRUD para la base de datos
-│   │   ├── database.py            # Configuración SQLite
+│   │   ├── database.py            # Configuración SQLite y SQLAlchemy
 │   │   ├── models.py              # Modelos ORM
 │   │   └── __init__.py
 │   │
