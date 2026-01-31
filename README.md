@@ -305,14 +305,20 @@ sqlalchemy
 pip install -r requirements.txt
 ```
 
-### 2. Ejecutar el backend
+### 2. Inicializar la Base de Datos
+# Este comando creará el archivo .db y las tablas necesarias
+```bash
+python -m app.db.init_db
+```
+
+### 3. Ejecutar el backend
 ```bash
 uvicorn app.main:app --reload
 ```
 
-### 3. Ejecutar la interfaz
+### 4. Ejecutar la interfaz
 ```bash
-streamlit run streamlit_app.py
+streamlit run frontend/streamlit_app.py
 ```
 
 ---
