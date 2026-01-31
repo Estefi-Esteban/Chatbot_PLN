@@ -1,14 +1,8 @@
-# PREPROCESSING.PY
 import re
 import nltk
 import string
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.corpus import stopwords
-
-# Asegúrate de descargar esto una vez si no lo tienes
-# nltk.download('stopwords')
-# nltk.download('punkt')
-# nltk.download('wordnet')
 
 PUNCTUATION_TABLE = dict((ord(p), None) for p in string.punctuation)
 
